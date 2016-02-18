@@ -1,77 +1,73 @@
 {
     "ver": "0.0.1",
     "authors": [
-        "dolson"
+        "janakakbase"
     ],
-    "contact": "help@kbase.us",
+    "contact": "janakaed@anl.gov",
     "visible": true,
     "categories": ["active"],
     "widgets": {
         "input": null,
-        "output": null
+        "output": "kbaseTabTable"
     },
-    "parameters": [ 
+    "parameters": [
         {
-            "id": "contigset_id",
+            "id": "genome_id",
             "optional": false,
             "advanced": false,
             "allow_multiple": false,
             "default_values": [ "" ],
             "field_type": "text",
             "text_options": {
-                "valid_ws_types": [ "KBaseGenomes.ContigSet" ]
+                "valid_ws_types": [ "KBaseGenomes.Genome" ]
             }
         },
         {
-            "id": "min_length",
-            "optional": false,
-            "advanced": false,
-            "allow_multiple": false,
-            "default_values": [ "" ],
-            "field_type": "text",
-            "text_options": {
-                "validate_as": "int",
-                "min_integer" : 0
+            "id" : "outputObject",
+            "optional" : false,
+            "advanced" : false,
+            "allow_multiple" : false,
+            "default_values" : [ "" ],
+            "field_type" : "text",
+            "text_options" : {
+            "valid_ws_types" : [ "KBaseFBA.MissingRoleData" ],
+            "is_output_name":true
             }
-        }
+         }
     ],
     "behavior": {
         "service-mapping": {
             "url": "",
             "name": "SEEDtk",
-            "method": "filter_contigs",
+            "method": "missing_roles",
             "input_mapping": [
                 {
                     "narrative_system_variable": "workspace",
-                    "target_property": "workspace"
+                    "target_argument_position": "0"
                 },
                 {
-                    "input_parameter": "contigset_id",
-                    "target_property": "contigset_id"
+                    "input_parameter": "genome_id",
+                    "target_argument_position": "1"
                 },
                 {
-                    "input_parameter": "min_length",
-                    "target_property": "min_length"
+                    "input_parameter": "outputObject",
+                    "target_argument_position": "2"
                 }
             ],
             "output_mapping": [
                 {
-                    "service_method_output_path": [0],
-                    "target_property": "contig_filter_result"
+                  "constant_value": "KBaseFBA.MissingRoleData",
+                  "target_property": "type"
                 },
                 {
-                    "input_parameter": "contigset_id",
-                    "target_property": "input_contigset_id"
+                  "input_parameter": "outputObject",
+                  "target_property": "obj"
                 },
                 {
-                    "input_parameter": "min_length",
-                    "target_property": "input_min_length"
-                },
-                {
-                    "narrative_system_variable": "workspace",
-                    "target_property": "workspaceName"
+                  "narrative_system_variable": "workspace",
+                  "target_property": "ws"
                 }
-            ]
+              ]
         }
     },
     "job_id_output_field": "docker"

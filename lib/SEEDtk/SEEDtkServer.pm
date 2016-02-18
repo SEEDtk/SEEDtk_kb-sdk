@@ -10,7 +10,7 @@ use Config::Simple;
 my $get_time = sub { time, 0 };
 eval {
     require Time::HiRes;
-    $get_time = sub { Time::HiRes::gettimeofday() };
+    $get_time = sub { Time::HiRes::gettimeofday };
 };
 
 use Bio::KBase::AuthToken;
@@ -20,7 +20,7 @@ extends 'RPC::Any::Server::JSONRPC::PSGI';
 has 'instance_dispatch' => (is => 'ro', isa => 'HashRef');
 has 'user_auth' => (is => 'ro', isa => 'UserAuth');
 has 'valid_methods' => (is => 'ro', isa => 'HashRef', lazy => 1,
-                        builder => '_build_valid_methods');
+			builder => '_build_valid_methods');
 has 'loggers' => (is => 'ro', required => 1, builder => '_build_loggers');
 has 'config' => (is => 'ro', required => 1, builder => '_build_config');
 has 'local_headers' => (is => 'ro', isa => 'HashRef');
@@ -111,8 +111,8 @@ sub logcallback
 sub log
 {
     my ($self, $level, $context, $message, $tag) = @_;
-    my $user = defined($context->user_id()) ? $context->user_id(): undef;
-    $self->loggers()->{serverlog}->log_message($level, $message, $user,
+    my $user = defined($context->user_id()) ? $context->user_id(): undef; 
+    $self->loggers()->{serverlog}->log_message($level, $message, $user, 
         $context->module(), $context->method(), $context->call_id(),
         $context->client_ip(), $tag);
 }
@@ -126,12 +126,12 @@ sub _build_loggers
     $loggers->{userlog} = Bio::KBase::Log->new(
             $submod, {}, {ip_address => 1, authuser => 1, module => 1,
             method => 1, call_id => 1, changecallback => $callback,
-            tag => 1,
+	    tag => 1,
             config => $self->get_config_file()});
     $loggers->{serverlog} = Bio::KBase::Log->new(
             $submod, {}, {ip_address => 1, authuser => 1, module => 1,
             method => 1, call_id => 1,
-            tag => 1,
+	    tag => 1,
             logfile => $loggers->{userlog}->get_log_file()});
     $loggers->{serverlog}->set_log_level(6);
     return $loggers;
@@ -140,7 +140,7 @@ sub _build_loggers
 #override of RPC::Any::Server
 sub handle_error {
     my ($self, $error) = @_;
-
+    
     unless (ref($error) eq 'HASH' ||
            (blessed $error and $error->isa('RPC::Any::Exception'))) {
         $error = RPC::Any::Exception::PerlError->new(message => $error);
@@ -150,9 +150,9 @@ sub handle_error {
         my $encoded_error = $self->encode_output_from_exception($error);
         $output = $self->produce_output($encoded_error);
     };
-
+    
     return $output if $output;
-
+    
     die "$error\n\nAlso, an error was encountered while trying to send"
         . " this error: $@\n";
 }
@@ -223,13 +223,13 @@ sub call_method {
     my ($self, $data, $method_info) = @_;
 
     my ($module, $method, $modname) = @$method_info{qw(module method modname)};
-
+    
     my $ctx = SEEDtk::SEEDtkServerContext->new($self->{loggers}->{userlog},
                            client_ip => $self->getIPAddress());
     $ctx->module($modname);
     $ctx->method($method);
     $ctx->call_id($self->{_last_call}->{id});
-
+    
     my $args = $data->{arguments};
     my $prov_action = {'service' => $modname, 'method' => $method, 'method_params' => $args};
     $ctx->provenance([$prov_action]);
@@ -240,28 +240,28 @@ sub call_method {
     $ctx->authenticated(0);
     if ($method_auth eq 'none')
     {
-        # No authentication required here. Move along.
+	# No authentication required here. Move along.
     }
     else
     {
-        my $token = $self->_plack_req_header("Authorization");
+	my $token = $self->_plack_req_header("Authorization");
 
-        if (!$token && $method_auth eq 'required')
-        {
-            $self->exception('PerlError', "Authentication required for SEEDtk but no authentication header was passed");
-        }
+	if (!$token && $method_auth eq 'required')
+	{
+	    $self->exception('PerlError', "Authentication required for SEEDtk but no authentication header was passed");
+	}
 
-        my $auth_token = Bio::KBase::AuthToken->new(token => $token, ignore_authrc => 1);
-        my $valid = $auth_token->validate();
-        # Only throw an exception if authentication was required and it fails
-        if ($method_auth eq 'required' && !$valid)
-        {
-            $self->exception('PerlError', "Token validation failed: " . $auth_token->error_message);
-        } elsif ($valid) {
-            $ctx->authenticated(1);
-            $ctx->user_id($auth_token->user_id);
-            $ctx->token( $token);
-        }
+	my $auth_token = Bio::KBase::AuthToken->new(token => $token, ignore_authrc => 1);
+	my $valid = $auth_token->validate();
+	# Only throw an exception if authentication was required and it fails
+	if ($method_auth eq 'required' && !$valid)
+	{
+	    $self->exception('PerlError', "Token validation failed: " . $auth_token->error_message);
+	} elsif ($valid) {
+	    $ctx->authenticated(1);
+	    $ctx->user_id($auth_token->user_id);
+	    $ctx->token( $token);
+	}
     }
 }
     my $new_isa = $self->get_package_isa($module);
@@ -270,7 +270,7 @@ sub call_method {
     local $CallContext = $ctx;
     my @result;
     {
-        #
+        # 
         # Process tag and metadata information if present.
         #
         my $tag = $self->_plack_req_header("Kbrpc-Tag");
@@ -295,7 +295,7 @@ sub call_method {
             $self->log($Bio::KBase::Log::INFO, $ctx,
                 "X-Forwarded-For: " . $xFF, $tag);
         }
-
+	
         my $err;
         my $async_err;
         eval {
@@ -325,7 +325,7 @@ sub call_method {
                 } else {
                     @result = ($job_state);
                 }
-            } elsif ($cli || exists($sync_methods{$method}) ||
+            } elsif ($cli || exists($sync_methods{$method}) || 
                 !exists($async_run_methods{$method . "_async"})) {
             $self->log($Bio::KBase::Log::INFO, $ctx, "start method", $tag);
             local $SIG{__WARN__} = sub {
@@ -398,52 +398,52 @@ sub _plack_req_header {
 sub get_method
 {
     my ($self, $data) = @_;
-
+    
     my $full_name = $data->{method};
-
+    
     $full_name =~ /^(\S+)\.([^\.]+)$/;
     my ($package, $method) = ($1, $2);
-
+    
     if (!$package || !$method) {
-        $self->exception('NoSuchMethod',
-                         "'$full_name' is not a valid method. It must"
-                         . " contain a package name, followed by a period,"
-                         . " followed by a method name.");
+	$self->exception('NoSuchMethod',
+			 "'$full_name' is not a valid method. It must"
+			 . " contain a package name, followed by a period,"
+			 . " followed by a method name.");
     }
 
     if (!$self->valid_methods->{$method})
     {
-        $self->exception('NoSuchMethod',
-                         "'$method' is not a valid method in service SEEDtk.");
+	$self->exception('NoSuchMethod',
+			 "'$method' is not a valid method in service SEEDtk.");
     }
-
+	
     my $inst = $self->instance_dispatch->{$package};
     my $module;
     if ($inst)
     {
-        $module = $inst;
+	$module = $inst;
     }
     else
     {
-        $module = $self->get_module($package);
-        if (!$module) {
-            $self->exception('NoSuchMethod',
-                             "There is no method package named '$package'.");
-        }
-
-        Class::MOP::load_class($module);
+	$module = $self->get_module($package);
+	if (!$module) {
+	    $self->exception('NoSuchMethod',
+			     "There is no method package named '$package'.");
+	}
+	
+	Class::MOP::load_class($module);
     }
 
     if (exists($async_run_methods{$method}) or exists($async_check_methods{$method})) {
         return { module => $module, method => $method, modname => $package };
     }
-
+    
     if (!$module->can($method)) {
-        $self->exception('NoSuchMethod',
-                         "There is no method named '$method' in the"
-                         . " '$package' package.");
+	$self->exception('NoSuchMethod',
+			 "There is no method named '$method' in the"
+			 . " '$package' package.");
     }
-
+    
     return { module => $module, method => $method, modname => $package };
 }
 
@@ -530,7 +530,7 @@ __PACKAGE__->mk_accessors(qw(user_id client_ip authenticated token
 sub new
 {
     my($class, $logger, %opts) = @_;
-
+    
     my $self = {
         %opts,
     };
@@ -545,7 +545,7 @@ sub new
 sub _get_user
 {
     my ($self) = @_;
-    return defined($self->user_id()) ? $self->user_id(): undef;
+    return defined($self->user_id()) ? $self->user_id(): undef; 
 }
 
 sub _log
@@ -612,7 +612,7 @@ sub new
 {
     my($class, $ctx, $get_time) = @_;
     my $self = {
-        get_time => $get_time,
+	get_time => $get_time,
     };
     my $dest = $ENV{KBRPC_ERROR_DEST} if exists $ENV{KBRPC_ERROR_DEST};
     my $tag = $ENV{KBRPC_TAG} if exists $ENV{KBRPC_TAG};
@@ -624,44 +624,44 @@ sub new
 
     if ($dest && $dest =~ m,^/,)
     {
-        #
-        # File destination
-        #
-        my $fh;
+	#
+	# File destination
+	#
+	my $fh;
 
-        if ($tag)
-        {
-            $tag =~ s,/,_,g;
-            $dest = "$dest/$tag";
-            if (! -d $dest)
-            {
-                mkdir($dest);
-            }
-        }
-        if (open($fh, ">", "$dest/$name"))
-        {
-            $self->{file} = "$dest/$name";
-            $self->{dest} = $fh;
-        }
-        else
-        {
-            warn "Cannot open log file $dest/$name: $!";
-        }
+	if ($tag)
+	{
+	    $tag =~ s,/,_,g;
+	    $dest = "$dest/$tag";
+	    if (! -d $dest)
+	    {
+		mkdir($dest);
+	    }
+	}
+	if (open($fh, ">", "$dest/$name"))
+	{
+	    $self->{file} = "$dest/$name";
+	    $self->{dest} = $fh;
+	}
+	else
+	{
+	    warn "Cannot open log file $dest/$name: $!";
+	}
     }
     else
     {
-        #
-        # Log to string.
-        #
-        my $stderr;
-        $self->{dest} = \$stderr;
+	#
+	# Log to string.
+	#
+	my $stderr;
+	$self->{dest} = \$stderr;
     }
-
+    
     bless $self, $class;
 
     for my $e (sort { $a cmp $b } keys %ENV)
     {
-        $self->log_cmd($e, $ENV{$e});
+	$self->log_cmd($e, $ENV{$e});
     }
     return $self;
 }
@@ -671,11 +671,11 @@ sub redirect
     my($self) = @_;
     if ($self->{dest})
     {
-        return("2>", $self->{dest});
+	return("2>", $self->{dest});
     }
     else
     {
-        return ();
+	return ();
     }
 }
 
@@ -684,11 +684,11 @@ sub redirect_both
     my($self) = @_;
     if ($self->{dest})
     {
-        return(">&", $self->{dest});
+	return(">&", $self->{dest});
     }
     else
     {
-        return ();
+	return ();
     }
 }
 
@@ -708,13 +708,13 @@ sub log
     my $ts = $self->timestamp();
     if (ref($d) eq 'SCALAR')
     {
-        $$d .= "[$ts] " . $str . "\n";
-        return 1;
+	$$d .= "[$ts] " . $str . "\n";
+	return 1;
     }
     elsif ($d)
     {
-        print $d "[$ts] " . $str . "\n";
-        return 1;
+	print $d "[$ts] " . $str . "\n";
+	return 1;
     }
     return 0;
 }
@@ -727,21 +727,21 @@ sub log_cmd
     my $ts = $self->timestamp();
     if (ref($cmd[0]))
     {
-        $str = join(" ", @{$cmd[0]});
+	$str = join(" ", @{$cmd[0]});
     }
     else
     {
-        $str = join(" ", @cmd);
+	$str = join(" ", @cmd);
     }
     if (ref($d) eq 'SCALAR')
     {
-        $$d .= "[$ts] " . $str . "\n";
+	$$d .= "[$ts] " . $str . "\n";
     }
     elsif ($d)
     {
-        print $d "[$ts] " . $str . "\n";
+	print $d "[$ts] " . $str . "\n";
     }
-
+	 
 }
 
 sub dest
@@ -755,12 +755,12 @@ sub text_value
     my($self) = @_;
     if (ref($self->{dest}) eq 'SCALAR')
     {
-        my $r = $self->{dest};
-        return $$r;
+	my $r = $self->{dest};
+	return $$r;
     }
     else
     {
-        return $self->{file};
+	return $self->{file};
     }
 }
 
@@ -778,7 +778,7 @@ sub run_method {
         if (!defined($url)) {
             Bio::KBase::Exceptions::KBaseException->throw(
                 error => "Neither 'job-service-url' parameter is defined in " .
-                    "configuration nor 'KB_JOB_SERVICE_URL' variable is defined in system",
+                    "configuration nor 'KB_JOB_SERVICE_URL' variable is defined in system", 
                 method_name => $method_name);
         }
     }
@@ -868,7 +868,7 @@ unless (caller) {
     );
     my $server = SEEDtk::SEEDtkServer->new(
         instance_dispatch => { @dispatch },
-        allow_get => 0,
+        allow_get => 0, 
         local_headers => \%headers);
     open(my $fih, '<', $input_file) or die $!;
     my $input = '';

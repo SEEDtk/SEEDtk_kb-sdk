@@ -1,9 +1,9 @@
 #
 # define display information
 #
-name: Missing Roles
+name: Compute Missing Annotation
 tooltip: |
-    Find missing roles and reactions in a model
+    Compute missing annoation for a given genome based on closely related reference genomes
 screenshots: []
 
 icon: icon.png
@@ -27,15 +27,19 @@ suggestions:
 # Configure the display and description of parameters
 #
 parameters :
-    contigset_id :
+    genome_id :
         ui-name : |
-            Contig Set Name
+            Genome Name
         short-hint : |
-            The contig set containing the DNA for which we want missing roles
-    min_length :
+            The Genome of interest for computing possible missing annoation
+
+    outputObject :
         ui-name : |
-            Min Length Threshold
+            Output name
         short-hint : |
-            All contigs below this length will be removed
+            Output name  of data object
+        long-hint  : |
+            Analysis data will be stored in this object.
+
 description : |
-    <p>This is a simple method designed to illustrate the KBase SDK.</p>
+    <p>This method compute possible missing roles based on closely related well annoated set of reference genomes, These missing roles could be used improve metabolic models.</p>

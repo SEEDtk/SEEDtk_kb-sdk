@@ -23,8 +23,8 @@ my $impl = new SEEDtk::SEEDtkImpl();
 eval {
     my $obj_id = "NC_004349";
     my $ws = 'janakakbase:1450461455608';
-    my $obj_name = "691161.5.contigs";
-    my $ret = $impl->missing_roles($ws, $obj_name, '691161.5', 'Peptoclostridium difficile');
+    my $obj_name = "691161.5";
+    my $ret = $impl->missing_roles($ws, $obj_name);
     my $mRoles = $ret->{missing_roles};
     for my $mRole (@$mRoles) {
         print "$mRole->{role_id} ($mRole->{genome_hits} close hits) found at $mRole->{hit_location}.\n";

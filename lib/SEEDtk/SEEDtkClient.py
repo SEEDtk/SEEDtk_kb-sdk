@@ -171,10 +171,10 @@ class SEEDtk(object):
             raise ServerError('Unknown', 0, 'An unknown server error occurred')
         return resp['result']
  
-    def missing_roles(self, workspace_name, contigset_id, genome_id, genome_name, json_rpc_context = None):
+    def missing_roles(self, workspace_name, genome_id, outputObject, json_rpc_context = None):
         if json_rpc_context and type(json_rpc_context) is not dict:
             raise ValueError('Method missing_roles: argument json_rpc_context is not type dict as required.')
         resp = self._call('SEEDtk.missing_roles',
-                          [workspace_name, contigset_id, genome_id, genome_name], json_rpc_context)
+                          [workspace_name, genome_id, outputObject], json_rpc_context)
         return resp[0]
  

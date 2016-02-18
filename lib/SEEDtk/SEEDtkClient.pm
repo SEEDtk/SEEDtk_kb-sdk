@@ -112,7 +112,7 @@ sub new
 
 =head2 missing_roles
 
-  $return = $obj->missing_roles($workspace_name, $contigset_id, $genome_id, $genome_name)
+  $return = $obj->missing_roles($workspace_name, $genome_id, $outputObject)
 
 =over 4
 
@@ -122,17 +122,18 @@ sub new
 
 <pre>
 $workspace_name is a SEEDtk.workspace_name
-$contigset_id is a SEEDtk.contigset_id
 $genome_id is a SEEDtk.genome_id
-$genome_name is a SEEDtk.genome_name
+$outputObject is a SEEDtk.outputObject
 $return is a SEEDtk.MissingRoleData
 workspace_name is a string
-contigset_id is a string
 genome_id is a string
-genome_name is a string
+outputObject is a string
 MissingRoleData is a reference to a hash where the following keys are defined:
-	roles has a value which is a reference to a list where each element is a SEEDtk.MissingRoleItem
 	contigset_id has a value which is a SEEDtk.contigset_id
+	missing_roles has a value which is a reference to a list where each element is a SEEDtk.MissingRoleItem
+	close_genomes has a value which is a reference to a list where each element is a SEEDtk.CloseGenomeItem
+	found_roles has a value which is a reference to a list where each element is a SEEDtk.FoundRoleItem
+contigset_id is a string
 MissingRoleItem is a reference to a hash where the following keys are defined:
 	role_id has a value which is a string
 	role_description has a value which is a string
@@ -140,6 +141,19 @@ MissingRoleItem is a reference to a hash where the following keys are defined:
 	blast_score has a value which is a float
 	perc_identity has a value which is a float
 	hit_location has a value which is a string
+	protein_sequence has a value which is a string
+	reactions has a value which is a reference to a list where each element is a SEEDtk.ReactionItem
+ReactionItem is a reference to a hash where the following keys are defined:
+	reaction_id has a value which is a string
+	reaction_name has a value which is a string
+CloseGenomeItem is a reference to a hash where the following keys are defined:
+	id has a value which is a SEEDtk.genome_id
+	hit_count has a value which is an int
+	name has a value which is a SEEDtk.genome_name
+genome_name is a string
+FoundRoleItem is a reference to a hash where the following keys are defined:
+	role_id has a value which is a string
+	role_description has a value which is a string
 
 </pre>
 
@@ -148,17 +162,18 @@ MissingRoleItem is a reference to a hash where the following keys are defined:
 =begin text
 
 $workspace_name is a SEEDtk.workspace_name
-$contigset_id is a SEEDtk.contigset_id
 $genome_id is a SEEDtk.genome_id
-$genome_name is a SEEDtk.genome_name
+$outputObject is a SEEDtk.outputObject
 $return is a SEEDtk.MissingRoleData
 workspace_name is a string
-contigset_id is a string
 genome_id is a string
-genome_name is a string
+outputObject is a string
 MissingRoleData is a reference to a hash where the following keys are defined:
-	roles has a value which is a reference to a list where each element is a SEEDtk.MissingRoleItem
 	contigset_id has a value which is a SEEDtk.contigset_id
+	missing_roles has a value which is a reference to a list where each element is a SEEDtk.MissingRoleItem
+	close_genomes has a value which is a reference to a list where each element is a SEEDtk.CloseGenomeItem
+	found_roles has a value which is a reference to a list where each element is a SEEDtk.FoundRoleItem
+contigset_id is a string
 MissingRoleItem is a reference to a hash where the following keys are defined:
 	role_id has a value which is a string
 	role_description has a value which is a string
@@ -166,6 +181,19 @@ MissingRoleItem is a reference to a hash where the following keys are defined:
 	blast_score has a value which is a float
 	perc_identity has a value which is a float
 	hit_location has a value which is a string
+	protein_sequence has a value which is a string
+	reactions has a value which is a reference to a list where each element is a SEEDtk.ReactionItem
+ReactionItem is a reference to a hash where the following keys are defined:
+	reaction_id has a value which is a string
+	reaction_name has a value which is a string
+CloseGenomeItem is a reference to a hash where the following keys are defined:
+	id has a value which is a SEEDtk.genome_id
+	hit_count has a value which is an int
+	name has a value which is a SEEDtk.genome_name
+genome_name is a string
+FoundRoleItem is a reference to a hash where the following keys are defined:
+	role_id has a value which is a string
+	role_description has a value which is a string
 
 
 =end text
@@ -184,19 +212,18 @@ find missing roles in a set of contigs
 
 # Authentication: required
 
-    if ((my $n = @args) != 4)
+    if ((my $n = @args) != 3)
     {
 	Bio::KBase::Exceptions::ArgumentValidationError->throw(error =>
-							       "Invalid argument count for function missing_roles (received $n, expecting 4)");
+							       "Invalid argument count for function missing_roles (received $n, expecting 3)");
     }
     {
-	my($workspace_name, $contigset_id, $genome_id, $genome_name) = @args;
+	my($workspace_name, $genome_id, $outputObject) = @args;
 
 	my @_bad_arguments;
         (!ref($workspace_name)) or push(@_bad_arguments, "Invalid type for argument 1 \"workspace_name\" (value was \"$workspace_name\")");
-        (!ref($contigset_id)) or push(@_bad_arguments, "Invalid type for argument 2 \"contigset_id\" (value was \"$contigset_id\")");
-        (!ref($genome_id)) or push(@_bad_arguments, "Invalid type for argument 3 \"genome_id\" (value was \"$genome_id\")");
-        (!ref($genome_name)) or push(@_bad_arguments, "Invalid type for argument 4 \"genome_name\" (value was \"$genome_name\")");
+        (!ref($genome_id)) or push(@_bad_arguments, "Invalid type for argument 2 \"genome_id\" (value was \"$genome_id\")");
+        (!ref($outputObject)) or push(@_bad_arguments, "Invalid type for argument 3 \"outputObject\" (value was \"$outputObject\")");
         if (@_bad_arguments) {
 	    my $msg = "Invalid arguments passed to missing_roles:\n" . join("", map { "\t$_\n" } @_bad_arguments);
 	    Bio::KBase::Exceptions::ArgumentValidationError->throw(error => $msg,
@@ -316,114 +343,6 @@ a string
 
 
 
-=head2 workspace_name
-
-=over 4
-
-
-
-=item Description
-
-A string representing a workspace name.
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a string
-</pre>
-
-=end html
-
-=begin text
-
-a string
-
-=end text
-
-=back
-
-
-
-=head2 MissingRoleItem
-
-=over 4
-
-
-
-=item Description
-
-description of a role missing in the contigs
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-role_id has a value which is a string
-role_description has a value which is a string
-genome_hits has a value which is an int
-blast_score has a value which is a float
-perc_identity has a value which is a float
-hit_location has a value which is a string
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-role_id has a value which is a string
-role_description has a value which is a string
-genome_hits has a value which is an int
-blast_score has a value which is a float
-perc_identity has a value which is a float
-hit_location has a value which is a string
-
-
-=end text
-
-=back
-
-
-
-=head2 MissingRoleData
-
-=over 4
-
-
-
-=item Definition
-
-=begin html
-
-<pre>
-a reference to a hash where the following keys are defined:
-roles has a value which is a reference to a list where each element is a SEEDtk.MissingRoleItem
-contigset_id has a value which is a SEEDtk.contigset_id
-
-</pre>
-
-=end html
-
-=begin text
-
-a reference to a hash where the following keys are defined:
-roles has a value which is a reference to a list where each element is a SEEDtk.MissingRoleItem
-contigset_id has a value which is a SEEDtk.contigset_id
-
-
-=end text
-
-=back
-
-
-
 =head2 genome_id
 
 =over 4
@@ -469,6 +388,261 @@ a string
 =begin text
 
 a string
+
+=end text
+
+=back
+
+
+
+=head2 workspace_name
+
+=over 4
+
+
+
+=item Description
+
+A string representing a workspace name.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 outputObject
+
+=over 4
+
+
+
+=item Description
+
+A string representing a output object name.
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a string
+</pre>
+
+=end html
+
+=begin text
+
+a string
+
+=end text
+
+=back
+
+
+
+=head2 ReactionItem
+
+=over 4
+
+
+
+=item Description
+
+description of a role missing in the contigs
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+reaction_id has a value which is a string
+reaction_name has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+reaction_id has a value which is a string
+reaction_name has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 MissingRoleItem
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+role_id has a value which is a string
+role_description has a value which is a string
+genome_hits has a value which is an int
+blast_score has a value which is a float
+perc_identity has a value which is a float
+hit_location has a value which is a string
+protein_sequence has a value which is a string
+reactions has a value which is a reference to a list where each element is a SEEDtk.ReactionItem
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+role_id has a value which is a string
+role_description has a value which is a string
+genome_hits has a value which is an int
+blast_score has a value which is a float
+perc_identity has a value which is a float
+hit_location has a value which is a string
+protein_sequence has a value which is a string
+reactions has a value which is a reference to a list where each element is a SEEDtk.ReactionItem
+
+
+=end text
+
+=back
+
+
+
+=head2 FoundRoleItem
+
+=over 4
+
+
+
+=item Description
+
+description of a role found in the contigs
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+role_id has a value which is a string
+role_description has a value which is a string
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+role_id has a value which is a string
+role_description has a value which is a string
+
+
+=end text
+
+=back
+
+
+
+=head2 CloseGenomeItem
+
+=over 4
+
+
+
+=item Description
+
+description of a close genome
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+id has a value which is a SEEDtk.genome_id
+hit_count has a value which is an int
+name has a value which is a SEEDtk.genome_name
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+id has a value which is a SEEDtk.genome_id
+hit_count has a value which is an int
+name has a value which is a SEEDtk.genome_name
+
+
+=end text
+
+=back
+
+
+
+=head2 MissingRoleData
+
+=over 4
+
+
+
+=item Definition
+
+=begin html
+
+<pre>
+a reference to a hash where the following keys are defined:
+contigset_id has a value which is a SEEDtk.contigset_id
+missing_roles has a value which is a reference to a list where each element is a SEEDtk.MissingRoleItem
+close_genomes has a value which is a reference to a list where each element is a SEEDtk.CloseGenomeItem
+found_roles has a value which is a reference to a list where each element is a SEEDtk.FoundRoleItem
+
+</pre>
+
+=end html
+
+=begin text
+
+a reference to a hash where the following keys are defined:
+contigset_id has a value which is a SEEDtk.contigset_id
+missing_roles has a value which is a reference to a list where each element is a SEEDtk.MissingRoleItem
+close_genomes has a value which is a reference to a list where each element is a SEEDtk.CloseGenomeItem
+found_roles has a value which is a reference to a list where each element is a SEEDtk.FoundRoleItem
+
 
 =end text
 
